@@ -11,23 +11,18 @@ library QueueLib {
     }
 
     function enque(Queue storage queue, uint256 data) public {
-        require(queue.size < type(uint256).max - 1, "queue is full");
-
-        queue.data[queue.back] = data;
+        queue.data.push(data);
         queue.size++;
-        unchecked {
-            queue.back++;
-        }
+        queue.back++;
     }
 
     function deque(Queue storage queue) public returns (uint256) {
         require(queue.size > 0, "queue is empty");
-
         queue.size--;
-        unchecked {
-            queue.front++;
-            return queue.data[queue.front-1];
-        }
+        queue.front++;
+        uint256 value = queue.data[queue.front-1];
+        delete queue.data[queue.front-1];
+        return value;
     }
 
     function frontValue(Queue storage queue) public view returns (uint256) {

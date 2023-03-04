@@ -121,4 +121,14 @@ contract OkimochiToken is IERC20, Pausable, ReentrancyGuard, Ownable {
     function allowance(address _owner, address _spender) public view returns (uint256 remaining) {
         remaining = _allowances[_owner][_spender];
     }
+
+    function _mint(uint256 _value, address _to) public whenNotPaused onlyOwner {
+        Deposit memory dep;
+        dep.expiration = block.timestamp + 60 * 60 * 24 * 14;
+        dep.value = _value;
+        _deposits[_numDeposits] = dep;
+        _depositIds[_to].enque(_numDeposits);
+        _numDeposits++;
+        _supply += _value;
+    }
 }

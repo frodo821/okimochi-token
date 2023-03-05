@@ -3,9 +3,9 @@
 価値を保存できないことに意味がある、かもしれない。
 
 
-- [`0x67694893dD17A28e84d4dD911522ea09722fc18E`](https://mumbai.polygonscan.com/address/0x67694893dD17A28e84d4dD911522ea09722fc18E): ConciliatorProxy
-- [`0x0eD79A21d5f72D288a1cB4bc4600A40Ce9405AeE`](https://mumbai.polygonscan.com/address/0x0eD79A21d5f72D288a1cB4bc4600A40Ce9405AeE): AccessToken
-- [`0x392657F10817a86D8c18E30C77fEa52d157156ff`](https://mumbai.polygonscan.com/address/0x392657F10817a86D8c18E30C77fEa52d157156ff): OkimochiToken
+- [`0x32d2769fE46649020B73Eabd5E3Fff28A4F56487`](https://mumbai.polygonscan.com/address/0x32d2769fE46649020B73Eabd5E3Fff28A4F56487): ConciliatorProxy
+- [`0x89F0810725EF263ccbF88E58407583c479fb54Ed`](https://mumbai.polygonscan.com/address/0x89F0810725EF263ccbF88E58407583c479fb54Ed): AccessToken
+- [`0x46eC01aC815aE6Ed7a2808f614Cf516e6A7EbD08`](https://mumbai.polygonscan.com/address/0x46eC01aC815aE6Ed7a2808f614Cf516e6A7EbD08): OkimochiToken
 
 ## コントラクトの構成
 

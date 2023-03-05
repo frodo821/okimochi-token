@@ -3,11 +3,26 @@
 // And use Right click -> "Run" from context menu of the file to run the script. Shortcut: Ctrl+Shift+S
 
 import { deploy } from './ethers-lib'
+import { ethers } from 'ethers'
 
 (async () => {
     try {
-        const result = await deploy('Storage', [])
-        console.log(`address: ${result.address}`)
+        const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner();
+        const accessToken = await deploy('AccessToken', []);
+        const okimochi = await deploy('OkimochiToken', []);
+
+        await accessToken.mint(await signer.getAddress());
+
+        const conciliatorProxy = await deploy('ConciliatorProxy', []);
+        await conciliatorProxy.setAccessTokenContract(accessToken.address);
+
+        await conciliatorProxy.transferOwnership(conciliatorProxy.address);
+        await accessToken.transferOwnership(conciliatorProxy.address);
+        await okimochi.transferOwnership(conciliatorProxy.address);
+
+        console.log(`ConciliatorProxy: ${conciliatorProxy.address}`);
+        console.log(`AccessToken: ${accessToken.address}`);
+        console.log(`OkimochiToken: ${okimochi.address}`);
     } catch (e) {
         console.log(e.message)
     }

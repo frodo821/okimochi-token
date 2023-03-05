@@ -148,7 +148,7 @@ contract ConciliatorProxy is Ownable {
     }
 
     function vote(uint256 _proposalId, bool upvote) external onlyVoter {
-        require(_proposals[_proposalId]._blockHeight < block.number, "This proposal is already expired to vote to.");
+        require(_proposals[_proposalId]._blockHeight > block.number, "This proposal is already expired to vote to.");
         require(!hasVoted(_proposalId, msg.sender), "You're already voted to this proposal.");
         _votes[_proposalId][upvote] += 1;
         _hasVoted[_proposalId][msg.sender] = true;

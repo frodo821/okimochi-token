@@ -2,7 +2,7 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 import "remix_tests.sol";
-import "../contracts/Heap.sol";
+import "../contracts/lib/Heap.sol";
 
 contract HeapTest {
     using HeapLib for HeapLib.Heap;

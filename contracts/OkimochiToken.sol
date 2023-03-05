@@ -5,7 +5,7 @@ pragma solidity 0.8.19;
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/security/ReentrancyGuard.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
-import "./Queue.sol";
+import "./lib/Queue.sol";
 
 struct Deposit {
     uint256 value;
@@ -33,22 +33,22 @@ contract OkimochiToken is IERC20, ReentrancyGuard, Ownable {
         }
     }
 
-    function name() public pure returns (string memory) {
+    function name() external pure returns (string memory) {
         return "Okimochi";
     }
 
-    function symbol() public pure returns (string memory) {
+    function symbol() external pure returns (string memory) {
         return "OKT";
     }
 
-    function decimals() public pure returns (uint8) {
+    function decimals() external pure returns (uint8) {
         return 18;
     }
 
-    function totalSupply() public view returns (uint256 supply) {
+    function totalSupply() external view returns (uint256 supply) {
         supply = 0;
 
-        for (uint256 i = _lastExpired+1; i < _numDeposits; i++) {
+        for (uint256 i = _lastExpired; i < _numDeposits; i++) {
             if (_deposits[i].expiration < block.timestamp) {
                 continue;
             }
@@ -57,7 +57,7 @@ contract OkimochiToken is IERC20, ReentrancyGuard, Ownable {
         }
     }
 
-    function balanceOf(address _owner) public view returns (uint256 balance) {
+    function balanceOf(address _owner) external view returns (uint256 balance) {
         QueueLib.Queue storage que = _depositIds[_owner];
         balance = 0;
         for (uint256 i = 0; i < que.size; i++) {
@@ -74,7 +74,7 @@ contract OkimochiToken is IERC20, ReentrancyGuard, Ownable {
     }
 
     function transfer(address _to, uint256 _value)
-        public
+        external
         nonReentrant
         returns (bool)
     {
@@ -126,7 +126,7 @@ contract OkimochiToken is IERC20, ReentrancyGuard, Ownable {
         return true;
     }
 
-    function approve(address _spender, uint256 _value) public returns (bool success) {
+    function approve(address _spender, uint256 _value) external returns (bool success) {
         _allowances[msg.sender][_spender] += _value;
         return true;
     }
@@ -135,7 +135,7 @@ contract OkimochiToken is IERC20, ReentrancyGuard, Ownable {
         remaining = _allowances[_owner][_spender];
     }
 
-    function _mint(uint256 _value, address _to) public onlyOwner {
+    function _mint(uint256 _value, address _to) external onlyOwner {
         Deposit memory dep;
         dep.expiration = block.timestamp + 60 * 60 * 24 * 14;
         dep.value = _value;
@@ -146,7 +146,7 @@ contract OkimochiToken is IERC20, ReentrancyGuard, Ownable {
     }
 
     function expirations(address _owner)
-        public
+        external
         view
         returns (Expiration[] memory result)
     {

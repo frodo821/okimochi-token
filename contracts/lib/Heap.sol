@@ -8,7 +8,7 @@ library HeapLib {
         uint256 size;
     }
 
-    function pop(Heap storage heap) external returns (uint256 _data) {
+    function pop(Heap storage heap) internal returns (uint256 _data) {
         require(heap.size > 0, "Heap is empty.");
 
         _data = heap.data[0];
@@ -34,7 +34,7 @@ library HeapLib {
         }
     }
 
-    function push(Heap storage heap, uint256 value) external {
+    function push(Heap storage heap, uint256 value) internal {
         heap.data.push(value);
         uint256 _pos = heap.size;
         heap.size++;

@@ -2,18 +2,18 @@
 // Please make sure to compile "./contracts/1_Storage.sol" file before running this script.
 // And use Right click -> "Run" from context menu of the file to run the script. Shortcut: Ctrl+Shift+S
 
-import { deploy } from './ethers-lib'
+import { deploy, deployWithProxy } from './ethers-lib'
 import { ethers } from 'ethers'
 
 (async () => {
     try {
         const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner();
         const accessToken = await deploy('AccessToken', []);
-        const okimochi = await deploy('OkimochiToken', []);
+        const okimochi = await deployWithProxy('OkimochiToken', '0x8129fc1c');
 
         await accessToken.mint(await signer.getAddress());
 
-        const conciliatorProxy = await deploy('ConciliatorProxy', []);
+        const conciliatorProxy = await deployWithProxy('ConciliatorProxy', '0x8129fc1c');
         await conciliatorProxy.setAccessTokenContract(accessToken.address);
 
         await conciliatorProxy.transferOwnership(conciliatorProxy.address);

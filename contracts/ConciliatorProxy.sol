@@ -3,11 +3,14 @@
 pragma solidity 0.8.19;
 
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/IERC721.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/master/contracts/access/OwnableUpgradeable.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/master/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "./lib/Heap.sol";
 
 struct Proposal {
-    uint256 _blockHeight;
+    uint256 _startBlockHeight;
+    uint256 _endBlockHeight;
+    uint256 _value;
     uint256 _minimumVote;
     address _contract;
     address _from;
@@ -22,8 +25,11 @@ struct ProposalResult {
     uint256 proposalId;
 }
 
-contract ConciliatorProxy is Ownable {
+contract ConciliatorProxy is OwnableUpgradeable, UUPSUpgradeable {
     using HeapLib for HeapLib.Heap;
+    event NewProposal(address indexed _from, uint256 _proposalId);
+    event ProposalSettled(uint256 indexed _proposalId, ProposalResult result);
+    event ProposalAbandoned(uint256 indexed _proposalId);
 
     mapping(uint256 => Proposal) private _proposals;
     mapping(uint256 => mapping(bool => uint256)) private _votes;
@@ -33,15 +39,24 @@ contract ConciliatorProxy is Ownable {
     address private _accessToken;
     uint256 private _nextProposalId;
     uint256 private _lastSettledAt;
-
     ProposalResult[] private _lastResult;
 
-    event NewProposal(address indexed _from, uint256 _proposalId);
-    event ProposalSettled(uint256 indexed _proposalId, ProposalResult result);
-    event ProposalAbandoned(uint256 indexed _proposalId);
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    function initialize() external initializer {
+        __Ownable_init();
+    }
+
+    function accessControlToken() external view returns(address) {
+        return _accessToken;
+    }
+
+    function isEligibleToVote(address _voter) public view returns(bool) {
+        return IERC721(_accessToken).balanceOf(_voter) > 0;
+    }
 
     modifier onlyVoter() {
-        require(IERC721(_accessToken).balanceOf(msg.sender) > 0, "Not a voter.");
+        require(isEligibleToVote(msg.sender), "Not a voter.");
         _;
     }
 
@@ -53,8 +68,10 @@ contract ConciliatorProxy is Ownable {
         string calldata _name,
         string calldata _description,
         address _contract,
+        uint256 _value,
         bytes calldata _calldata,
-        uint256 _blockHeight,
+        uint256 _startBlockHeight,
+        uint256 _endBlockHeight,
         uint256 _minimumVote
     ) external onlyVoter {
         Proposal memory prop;
@@ -62,14 +79,16 @@ contract ConciliatorProxy is Ownable {
         prop._description = _description;
         prop._contract = _contract;
         prop._calldata = _calldata;
-        prop._blockHeight = _blockHeight;
+        prop._value = _value;
+        prop._startBlockHeight = _startBlockHeight;
+        prop._endBlockHeight = _endBlockHeight;
         prop._minimumVote = _minimumVote;
         prop._from = msg.sender;
 
         _proposals[_nextProposalId] = prop;
-        _waitlist[_blockHeight].push(_nextProposalId);
+        _waitlist[_endBlockHeight].push(_nextProposalId);
 
-        _awaitingBlockHeights.push(_blockHeight);
+        _awaitingBlockHeights.push(_endBlockHeight);
 
         emit NewProposal(msg.sender, _nextProposalId);
 
@@ -80,7 +99,7 @@ contract ConciliatorProxy is Ownable {
         Proposal storage prop = _proposals[_proposalId];
         require(msg.sender == prop._from || msg.sender == owner(), "Not a proposer");
 
-        prop._blockHeight = 0;
+        prop._endBlockHeight = 0;
 
         emit ProposalAbandoned(_proposalId);
     }
@@ -98,7 +117,7 @@ contract ConciliatorProxy is Ownable {
                 uint256 proposalId = _waitlist[waited][i];
                 Proposal storage prop = _proposals[proposalId];
 
-                if (prop._blockHeight == 0) {
+                if (prop._endBlockHeight == 0) {
                     continue;
                 }
 
@@ -116,7 +135,7 @@ contract ConciliatorProxy is Ownable {
                     continue;
                 }
 
-                (bool ok, ) = prop._contract.call(prop._calldata);
+                (bool ok, ) = prop._contract.call{value: prop._value}(prop._calldata);
 
                 result.executed = true;
                 result.succeeded = ok;
@@ -145,16 +164,27 @@ contract ConciliatorProxy is Ownable {
     }
 
     function isSettled(uint256 _proposalId) external view returns (bool settled) {
-        settled = _proposals[_proposalId]._blockHeight <= _lastSettledAt;
+        settled = _proposals[_proposalId]._endBlockHeight <= _lastSettledAt;
     }
 
     function isAbandoned(uint256 _proposalId) external view returns (bool abandoned) {
-        abandoned = _proposals[_proposalId]._blockHeight == 0;
+        abandoned = _proposals[_proposalId]._endBlockHeight == 0;
+    }
+
+    function proposalsCount() external view returns (uint256 proposals) {
+        proposals = _nextProposalId;
+    }
+
+    function lastSettledBlockHeight() external view returns (uint256 blockheight) {
+        blockheight = _lastSettledAt;
     }
 
     function vote(uint256 _proposalId, bool upvote) external onlyVoter {
-        require(_proposals[_proposalId]._blockHeight > block.number, "This proposal is already expired to vote to.");
+        require(_proposals[_proposalId]._endBlockHeight == 0, "Invalid proposal to be voted.");
+        require(_proposals[_proposalId]._endBlockHeight > block.number, "This proposal is already expired to vote to.");
+        require(_proposals[_proposalId]._startBlockHeight <= block.number, "This proposal is not yet accepted to vote to.");
         require(!hasVoted(_proposalId, msg.sender), "You're already voted to this proposal.");
+
         _votes[_proposalId][upvote] += 1;
         _hasVoted[_proposalId][msg.sender] = true;
     }

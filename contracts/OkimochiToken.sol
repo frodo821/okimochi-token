@@ -3,8 +3,8 @@
 pragma solidity 0.8.19;
 
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/security/ReentrancyGuard.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/master/contracts/access/OwnableUpgradeable.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/master/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "./lib/Queue.sol";
 
 struct Deposit {
@@ -18,7 +18,7 @@ struct Expiration {
     uint256 expiration;
 }
 
-contract OkimochiToken is IERC20, ReentrancyGuard, Ownable {
+contract OkimochiToken is IERC20, OwnableUpgradeable, UUPSUpgradeable {
     using QueueLib for QueueLib.Queue;
 
     mapping(address => QueueLib.Queue) private _depositIds;
@@ -26,6 +26,12 @@ contract OkimochiToken is IERC20, ReentrancyGuard, Ownable {
     mapping(address => mapping(address => uint256)) _allowances;
     uint256 _numDeposits;
     uint256 private _lastExpired;
+
+    function initialize() external initializer {
+        __Ownable_init();
+    }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 
     function revertWithMessage(string memory reason) private pure {
         assembly {
@@ -75,7 +81,6 @@ contract OkimochiToken is IERC20, ReentrancyGuard, Ownable {
 
     function transfer(address _to, uint256 _value)
         external
-        nonReentrant
         returns (bool)
     {
         return transferFrom(msg.sender, _to, _value);
@@ -83,7 +88,6 @@ contract OkimochiToken is IERC20, ReentrancyGuard, Ownable {
 
     function transferFrom(address _from, address _to, uint256 _value)
         public
-        nonReentrant
         returns (bool success)
     {
         require(msg.sender == _from || allowance(_from, _to) >= _value, "Not enough allowance.");

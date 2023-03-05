@@ -21,9 +21,26 @@ export const deploy = async (contractName: string, args: Array<any>, accountInde
 
     const factory = new ethers.ContractFactory(metadata.abi, metadata.data.bytecode.object, signer)
 
-    const contract = await factory.deploy(...args)   
+    const contract = await factory.deploy(...args)
 
     // The contract is NOT deployed yet; we must wait until it is mined
     await contract.deployed()
     return contract
+}
+
+export async function deployWithProxy(contract: string, calldata: ethers.BytesLike, proxyAddress?: string) {
+    const impl = await deploy(contract, []);
+    const artifactsPath = `browser/contracts/artifacts/${contract}.json`
+    const metadata = JSON.parse(await remix.call('fileManager', 'getFile', artifactsPath))
+
+    const signer = (new ethers.providers.Web3Provider(web3Provider)).getSigner();
+
+    if (typeof proxyAddress === 'undefined') {
+        const proxy = await deploy('UUPSUpgradeProxy', [impl.address, calldata]);
+        return ethers.getContractAt(metadata.abi, proxy.address, signer);
+    }
+
+    const proxy = await ethers.getContractAt(metadata.abi, proxyAddress, signer);
+    await proxy.upgradeTo(impl.address);
+    return proxy;
 }

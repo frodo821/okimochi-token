@@ -143,6 +143,9 @@ contract OkimochiToken is IERC20, ReentrancyGuard, Ownable {
         dep.expiration = block.timestamp + 60 * 60 * 24 * 14;
         dep.value = _value;
         dep.from = address(0);
+
+        emit Transfer(address(0), _to, _value);
+
         _deposits[_numDeposits] = dep;
         _depositIds[_to].enque(_numDeposits);
         _numDeposits++;

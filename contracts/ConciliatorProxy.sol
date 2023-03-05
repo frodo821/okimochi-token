@@ -140,7 +140,7 @@ contract ConciliatorProxy is Ownable {
     }
 
     function isSettled(uint256 _proposalId) external view returns (bool settled) {
-        settled = _proposals[_proposalId]._blockHeight >= _lastSettledAt;
+        settled = _proposals[_proposalId]._blockHeight <= _lastSettledAt;
     }
 
     function isAbandoned(uint256 _proposalId) external view returns (bool abandoned) {

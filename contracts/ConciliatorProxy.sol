@@ -87,7 +87,12 @@ contract ConciliatorProxy is Ownable {
 
     function execute() external returns (ProposalResult[] memory) {
         _lastSettledAt = block.number;
-        while(_awaitingBlockHeights.data[0] >= block.number) {
+
+        if (_awaitingBlockHeights.size == 0) {
+            return new ProposalResult[](0);
+        }
+
+        while(_awaitingBlockHeights.size > 0 && _awaitingBlockHeights.data[0] <= block.number) {
             uint256 waited = _awaitingBlockHeights.pop();
             for (uint256 i = 0; i < _waitlist[waited].length; i++) {
                 uint256 proposalId = _waitlist[waited][i];

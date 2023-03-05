@@ -123,11 +123,14 @@ contract OkimochiToken is IERC20, ReentrancyGuard, Ownable {
         _depositIds[_to].enque(_numDeposits);
         _numDeposits++;
 
+        emit Transfer(_from, _to, _value);
+
         return true;
     }
 
     function approve(address _spender, uint256 _value) external returns (bool success) {
         _allowances[msg.sender][_spender] += _value;
+        emit Approval(msg.sender, _spender, _value);
         return true;
     }
 
